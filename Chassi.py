@@ -4,24 +4,43 @@ from pybricks.parameters import Button, Color, Direction, Port, Side, Stop
 from pybricks.robotics import DriveBase
 from pybricks.tools import wait, StopWatch
 
+
+# Preto -> Color(h=180, s=15, v=17)
+# Branco -> Color(h=180, s=5, v=89)
+
+
 class Chassi:
     def __init__(self):
         self.hub = PrimeHub()
-        self.LEFT_MOTOR = Motor(port=Port.A, positive_direction=Direction.COUNTERCLOCKWISE)
-        self.RIGHT_MOTOR = Motor(port=Port.B)
-        self.LEFT_COLOR_SENSOR = ColorSensor(port= Port.C)
-        self.MIDDLE_COLOR_SENSOR = ColorSensor(port= Port.E)
+        self.LEFT_MOTOR = Motor(port=Port.C)
+        self.RIGHT_MOTOR = Motor(port=Port.A, positive_direction=Direction.COUNTERCLOCKWISE)
+        self.LEFT_COLOR_SENSOR = ColorSensor(port= Port.B)
+        self.MIDDLE_COLOR_SENSOR = ColorSensor(port= Port.F)
         self.RIGHT_COLOR_SENSOR = ColorSensor(port= Port.D)
-        self.ULTRASSONIC_SENSOR = UltrasonicSensor(port= Port.F)
+        # self.ULTRASSONIC_SENSOR = UltrasonicSensor(port= Port.F)
 
         self.chassi = DriveBase(
             left_motor= self.LEFT_MOTOR,
             right_motor= self.RIGHT_MOTOR,
-            wheel_diameter= 3.04, # Centimetros
-            axle_track= 11.1 # Centimetros
+            wheel_diameter= 3.6, # Centimetros
+            axle_track= 14.0 # Centimetros
         )
-        self.chassi.use_gyro(use_gyro= True)
         self.kP = 1
+
+        self.chassi.settings(straight_acceleration=500, turn_acceleration=500)
+
+        Color.WHITE = Color(h=180, s=5, v=89)
+        Color.BLACK = Color(h=180, s=15, v=17)
+        my_colors = [Color.WHITE, Color.BLACK, Color.NONE]
+
+        self.LEFT_COLOR_SENSOR.detectable_colors(my_colors)
+        self.MIDDLE_COLOR_SENSOR.detectable_colors(my_colors)
+        self.RIGHT_COLOR_SENSOR.detectable_colors(my_colors)
+
+
+
+    def getMiddleHSV(self):
+        return self.MIDDLE_COLOR_SENSOR.hsv()
 
     def getLeftReflection(self):
         return self.LEFT_COLOR_SENSOR.reflection()
@@ -36,13 +55,12 @@ class Chassi:
         return self.LEFT_COLOR_SENSOR.color(surface= True)
     
     def getColorMiddle(self):
-        return self.Middle_COLOR_SENSOR.color(surface= True)
+        return self.MIDDLE_COLOR_SENSOR.color(surface= True)
 
     def getColorRight(self):
         return self.RIGHT_COLOR_SENSOR.color(surface= True)
 
-    def seguirReto(self, distancia): 
-        self.chassi.use_gyro(use_gyro= True)
+    def seguirReto(self, distancia):
         self.chassi.straight(
             distance= distancia,
             then= Stop.BRAKE
@@ -51,16 +69,23 @@ class Chassi:
     def stop(self):
         self.chassi.stop()
 
-    def drive(self, speed=200, rate):
+    def drive(self, rate, speed=10):
         self.chassi.drive(speed=speed, turn_rate=rate)
 
     def extremeCurve(self):
         if self.getColorLeft() == Color.WHITE:
             while self.getColorMiddle() == Color.WHITE:
-                self.drive(rate=200)
+                self.LEFT_MOTOR.run(200)
+                self.RIGHT_MOTOR.run(-600)
+            
         else:
             while self.getColorMiddle() == Color.WHITE:
-                self.drive(rate=-200)
+                self.LEFT_MOTOR.run(-600)
+                self.RIGHT_MOTOR.run(200)
+                # self.drive(rate=-40, speed=-10)
+                # wait(100)
+
+        self.stop()
 
     def pidControl(self):
         leftReflection = self.getLeftReflection() 
@@ -92,7 +117,7 @@ class Chassi:
             self.pidControl()
 
     def FollowPath(self):
-        if self.getColorMiddle() == Color.WHITE:
+        if (self.getColorMiddle() == Color.WHITE and self.getColorLeft() == Color.BLACK) or (self.getColorMiddle() == Color.WHITE and self.getColorRight() == Color.BLACK):
             self.extremeCurve()
         else:
             self.intersection()

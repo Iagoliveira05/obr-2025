@@ -8,7 +8,12 @@ from Chassi import Chassi
 from Anexo import Anexo
 
 def main():
-    chassi.seguirReto(20)
+    # chassi.seguirReto(20)
+    while True:
+        chassi.FollowPath()
+
+        # chassi.pidControl()
+        # print(chassi.getMiddleHSV())
 
 
 chassi = Chassi()
